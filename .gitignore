@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.env
+
+# Dataset files
+data/*.csv
+data/*.zip
+data/*.pcap
+data/*.pcapng
+
+# Jupyter
+.ipynb_checkpoints/
+
+# R
+.Rhistory
+.RData
+.Ruserdata
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Generated results
+results/*
