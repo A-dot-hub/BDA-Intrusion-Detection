@@ -6,6 +6,7 @@ venv/
 
 # Dataset files
 data/*.csv
+!data/processed/cicids2017_processed.csv
 data/*.zip
 data/*.pcap
 data/*.pcapng
