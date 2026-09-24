@@ -48,6 +48,6 @@ try:
 except FileNotFoundError:
     print(f"[-] Error: Could not find {baseline_path}")
 
-# Create an index on the IP field for sub-millisecond lookups
+# Create an index on the IP field for sub-millisecond lookup
 blacklist_col.create_index("ip", unique=True)
 print("[+] Database setup complete. Ready for real-time streaming.")
