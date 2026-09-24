@@ -1,8 +1,22 @@
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.Python
+env/
 venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment Variables
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
 
 # Dataset files
 data/*.csv
@@ -13,19 +27,50 @@ data/*.pcapng
 
 # Jupyter
 .ipynb_checkpoints/
+*/.ipynb_checkpoints/*
 
 # R
 .Rhistory
 .RData
 .Ruserdata
 
-# IDE
+# IDE / Editors
 .vscode/
 .idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
 
 # OS
 Thumbs.db
 .DS_Store
+.DS_Store?
+ehthumbs.db
+Icon?
 
 # Generated results
 results/*
+
+# FastAPI / Uvicorn / Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# ReactJS / Node / Frontend
+node_modules/
+/build
+/dist
+.eslintcache
+.stylelintcache
+*.log
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# Oxlint / Linters
+.oxlint_cache
