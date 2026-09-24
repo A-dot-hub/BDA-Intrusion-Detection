@@ -1,122 +1,168 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState, useEffect } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [packets, setPackets] = useState([]);
+  const [threatCount, setThreatCount] = useState(0);
+  const [chartData, setChartData] = useState([]);
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    const ws = new WebSocket("ws://127.0.0.1:8000/ws/stream");
+
+    ws.onopen = () => {
+      setIsConnected(true);
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        if (message.error) return;
+
+        // Keep the latest 50 packets to keep the table fast
+        setPackets((prev) => [message, ...prev].slice(0, 50));
+
+        if (message.threat_detected) {
+          setThreatCount((prev) => prev + 1);
+        }
+
+        setChartData((prev) => {
+          const timeLabel = message.timestamp
+            ? message.timestamp.split(" ")[1]
+            : "Live";
+          const updated = [
+            ...prev,
+            {
+              time: timeLabel,
+              threats: message.threat_detected ? 1 : 0,
+            },
+          ];
+          return updated.slice(-30);
+        });
+      } catch (err) {
+        console.error("Failed to parse packet payload:", err);
+      }
+    };
+
+    ws.onclose = () => {
+      setIsConnected(false);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="dashboard-container">
+      <header className="header">
+        <h1>Real-Time Intrusion Detection System</h1>
+        <div className={`status-badge ${isConnected ? "live" : "offline"}`}>
+          {isConnected ? "Live Stream Active" : "Disconnected"}
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      </header>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <div className="metrics-row">
+        <div className="metric-card">
+          <h3>Total Packets Scanned</h3>
+          <p className="value">{packets.length ? packets[0].id : 0}</p>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+        <div className="metric-card threat">
+          <h3>Threats Blocked (NoSQL)</h3>
+          <p className="value">{threatCount}</p>
         </div>
-      </section>
+      </div>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <div className="main-content">
+        <div className="table-container">
+          <h2>Live Packet Capture</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Flow ID</th>
+                <th>Timestamp</th>
+                <th>Source IP</th>
+                <th>Destination IP</th>
+                <th>Protocol</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {packets.map((pkt, idx) => (
+                <tr
+                  key={idx}
+                  className={pkt.threat_detected ? "row-threat" : "row-safe"}
+                >
+                  <td>{pkt.id}</td>
+                  <td>{pkt.timestamp}</td>
+                  <td>{pkt.source_ip}</td>
+                  <td>{pkt.destination_ip}</td>
+                  <td>TCP ({pkt.protocol})</td>
+                  <td>
+                    {pkt.threat_detected ? (
+                      <span className="badge badge-danger">BLACKLISTED</span>
+                    ) : (
+                      <span className="badge badge-success">CLEAN</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="table-container" style={{ marginTop: "20px" }}>
+          <h2>Module 5: Network Topology & Botnet Forensics</h2>
+          <div style={{ textAlign: "center", padding: "10px" }}>
+            <p style={{ color: "#aaa", marginBottom: "15px" }}>
+              Graph Analytics Engine (NetworkX) - Greedy Modularity Community
+              Detection
+            </p>
+            <img
+              src="/botnet_topology.png"
+              alt="Botnet Topology Map"
+              style={{
+                maxWidth: "100%",
+                height: "auto",
+                borderRadius: "8px",
+                border: "1px solid #444",
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="chart-container">
+          <h2>Threat Detection Frequency</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+              <XAxis dataKey="time" stroke="#ccc" />
+              <YAxis stroke="#ccc" />
+              <Tooltip
+                contentStyle={{ backgroundColor: "#222", border: "none" }}
+              />
+              <Line
+                type="step"
+                dataKey="threats"
+                stroke="#ff4444"
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-export default App
+export default App;
