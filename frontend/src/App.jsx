@@ -1,54 +1,61 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Navbar from './components/Navbar';
-import MetricCards from './components/MetricCards';
-import LiveStreamView from './components/LiveStreamView';
-import HadoopMapReduceView from './components/HadoopMapReduceView';
-import NoSqlServingView from './components/NoSqlServingView';
-import StreamingAlgorithmsView from './components/StreamingAlgorithmsView';
-import BotnetCommunityView from './components/BotnetCommunityView';
-import PredictiveAnalyticsRView from './components/PredictiveAnalyticsRView';
+import React, { useState, useEffect, useRef } from "react";
+import Navbar from "./components/Navbar";
+import MetricCards from "./components/MetricCards";
+import LiveStreamView from "./components/LiveStreamView";
+import HadoopMapReduceView from "./components/HadoopMapReduceView";
+import NoSqlServingView from "./components/NoSqlServingView";
+import StreamingAlgorithmsView from "./components/StreamingAlgorithmsView";
+import BotnetCommunityView from "./components/BotnetCommunityView";
+import PredictiveAnalyticsRView from "./components/PredictiveAnalyticsRView";
 
-import bdaData from './data/bda_dataset.json';
-import { BloomFilter, FlajoletMartin } from './services/streamingEngine';
+import bdaData from "./data/bda_dataset.json";
+import { BloomFilter, FlajoletMartin } from "./services/streamingEngine";
 
 function App() {
   // Theme State: 'dark' by default for cybersecurity operations
   const [theme, setTheme] = useState(() => {
     try {
-      const saved = localStorage.getItem('bda_theme');
-      return saved ? saved : 'dark';
+      const saved = localStorage.getItem("bda_theme");
+      return saved ? saved : "dark";
     } catch (e) {
-      return 'dark';
+      return "dark";
     }
   });
 
   // Apply theme to <html> element
   useEffect(() => {
     try {
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-        document.documentElement.classList.remove('light');
-        document.documentElement.setAttribute('data-theme', 'dark');
+      if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+        document.documentElement.classList.remove("light");
+        document.documentElement.setAttribute("data-theme", "dark");
       } else {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
-        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.classList.remove("dark");
+        document.documentElement.classList.add("light");
+        document.documentElement.setAttribute("data-theme", "light");
       }
-      localStorage.setItem('bda_theme', theme);
+      localStorage.setItem("bda_theme", theme);
     } catch (e) {}
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState('stream');
+  const [activeTab, setActiveTab] = useState("stream");
 
   // Stream state
   const [isPlaying, setIsPlaying] = useState(true);
+  const isPlayingRef = useRef(isPlaying);
+
+  // Keep isPlayingRef strictly in sync with isPlaying state
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
   const [speed, setSpeed] = useState(1);
-  const [streamSource, setStreamSource] = useState('bda_engine'); // 'websocket' | 'bda_engine'
+  const [streamSource, setStreamSource] = useState("bda_engine"); // 'websocket' | 'bda_engine'
   const [isConnected, setIsConnected] = useState(false);
   const [isDdosActive, setIsDdosActive] = useState(false);
 
@@ -94,23 +101,28 @@ function App() {
     let didConnect = false;
 
     try {
-      ws = new WebSocket('ws://127.0.0.1:8000/ws/stream');
+      ws = new WebSocket("ws://127.0.0.1:8000/ws/stream");
 
       ws.onopen = () => {
         didConnect = true;
         setIsConnected(true);
-        setStreamSource('websocket');
-        console.log('[+] Connected to local FastAPI WebSocket stream.');
+        setStreamSource("websocket");
+        console.log("[+] Connected to local FastAPI WebSocket stream.");
       };
 
       ws.onmessage = (event) => {
+        // STRICT PAUSE CHECK: If paused, immediately drop/ignore incoming WebSocket frames!
+        if (!isPlayingRef.current) {
+          return;
+        }
+
         try {
           const message = JSON.parse(event.data);
           if (message.error) return;
 
           handleIncomingPacket(message);
         } catch (err) {
-          console.error('Failed to parse WebSocket packet:', err);
+          console.error("Failed to parse WebSocket packet:", err);
         }
       };
 
@@ -121,12 +133,12 @@ function App() {
       ws.onclose = () => {
         if (didConnect) {
           setIsConnected(false);
-          setStreamSource('bda_engine');
+          setStreamSource("bda_engine");
         }
       };
     } catch (e) {
       setIsConnected(false);
-      setStreamSource('bda_engine');
+      setStreamSource("bda_engine");
     }
 
     return () => {
@@ -134,28 +146,42 @@ function App() {
     };
   }, []);
 
-  // 3. Packet Handling Function
+  // 3. Packet Handling Function - Guarantees NO state update if paused
   const handleIncomingPacket = (pkt) => {
+    if (!isPlayingRef.current) {
+      return;
+    }
+
     setPacketCounter((prev) => prev + 1);
 
     setPackets((prev) => [pkt, ...prev].slice(0, 50));
     if (pkt.threat_detected) {
       setThreatCount((prev) => prev + 1);
-      setLiveAlerts((prev) => [
-        {
-          id: pkt.id,
-          timestamp: pkt.timestamp,
-          ip: pkt.source_ip,
-          type: pkt.label === 'DDoS' ? 'Volumetric Flood' : 'Bloom Filter Match',
-          status: 'Blocked',
-        },
-        ...prev,
-      ].slice(0, 50));
+      setLiveAlerts((prev) =>
+        [
+          {
+            id: pkt.id,
+            timestamp: pkt.timestamp,
+            ip: pkt.source_ip,
+            type:
+              pkt.label === "DDoS" ? "Volumetric Flood" : "Bloom Filter Match",
+            status: "Blocked",
+          },
+          ...prev,
+        ].slice(0, 50),
+      );
+    }
+
+    if (pkt.fm_estimate !== undefined) {
+      setFmEstimate(pkt.fm_estimate);
+      setIsDdosActive(pkt.fm_estimate > 500);
     }
 
     // Chart Time-Series (last 30 intervals)
     setChartData((prev) => {
-      const timeLabel = pkt.timestamp ? pkt.timestamp.split(' ')[1] || 'Live' : 'Live';
+      const timeLabel = pkt.timestamp
+        ? pkt.timestamp.split(" ")[1] || "Live"
+        : "Live";
       const updated = [
         ...prev,
         {
@@ -174,6 +200,8 @@ function App() {
 
     const intervalTime = Math.max(20, Math.floor(100 / speed));
     const timer = setInterval(() => {
+      // Double check ref in timer tick
+      if (!isPlayingRef.current) return;
       if (!bloomFilterRef.current || !fmEstimatorRef.current) return;
 
       const flows = bdaData.stream_flows || [];
@@ -181,27 +209,26 @@ function App() {
 
       let flowData;
       let isThreat = false;
-      let label = 'BENIGN';
-      let sourceIp = '';
+      let label = "BENIGN";
+      let sourceIp = "";
 
       // Check if we are running a simulated DDoS burst
       if (ddosBurstRef.current > 0) {
         ddosBurstRef.current -= 1;
         // Generate high-cardinality spoofed IPs to trigger Flajolet-Martin
         sourceIp = `10.0.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
-        label = 'DDoS';
+        label = "DDoS";
         isThreat = true;
         flowData = {
           flow_id: `${sourceIp}-192.168.10.50-${Math.floor(Math.random() * 60000 + 1024)}-80-6`,
           source_ip: sourceIp,
-          destination_ip: '192.168.10.50',
-          protocol: '6',
+          destination_ip: "192.168.10.50",
+          protocol: "6",
           destination_port: 80,
           timestamp: new Date().toLocaleTimeString(),
-          label: 'DDoS',
+          label: "DDoS",
         };
       } else {
-        setIsDdosActive(false);
         const idx = streamIndexRef.current % flows.length;
         streamIndexRef.current += 1;
         const baseFlow = flows[idx];
@@ -215,7 +242,10 @@ function App() {
       }
 
       // 1. Bloom Filter Check
-      isThreat = bloomFilterRef.current.check(sourceIp) || label === 'DDoS' || label === 'Botnet';
+      isThreat =
+        bloomFilterRef.current.check(sourceIp) ||
+        label === "DDoS" ||
+        label === "Botnet";
 
       // 2. Flajolet-Martin Distinct Tracking
       fmEstimatorRef.current.add(sourceIp);
@@ -224,10 +254,7 @@ function App() {
 
       setFmEstimate(estimate);
       setActualDistinct(actual);
-
-      if (estimate > 500) {
-        setIsDdosActive(true);
-      }
+      setIsDdosActive(estimate > 500);
 
       const packetRecord = {
         id: packetCounter + 1,
@@ -248,58 +275,62 @@ function App() {
     return () => clearInterval(timer);
   }, [isPlaying, speed, packetCounter]);
 
-  // Rate calculation
+  // Rate calculation (0 pkts/sec when paused!)
   useEffect(() => {
+    if (!isPlaying) {
+      setLiveRate(0);
+      return;
+    }
     const rateTimer = setInterval(() => {
       setLiveRate(Math.floor(Math.random() * 8 + 18 * speed));
     }, 1000);
     return () => clearInterval(rateTimer);
-  }, [speed]);
+  }, [isPlaying, speed]);
 
   // Attack Injection Handler
   const handleInjectAttack = (type) => {
-    if (type === 'ddos') {
+    if (type === "ddos") {
       ddosBurstRef.current = 80; // Burst 80 spoofed IPs
       setIsDdosActive(true);
-    } else if (type === 'blacklist') {
+    } else if (type === "blacklist") {
       // Injects flow from confirmed primary attacker IP
       const pkt = {
         id: packetCounter + 1,
-        flow_id: '172.16.0.1-192.168.10.50-4444-80-6',
+        flow_id: "172.16.0.1-192.168.10.50-4444-80-6",
         timestamp: new Date().toLocaleTimeString(),
-        source_ip: '172.16.0.1',
-        destination_ip: '192.168.10.50',
-        protocol: '6',
+        source_ip: "172.16.0.1",
+        destination_ip: "192.168.10.50",
+        protocol: "6",
         destination_port: 80,
-        label: 'Infiltration / Attacker IP',
+        label: "Infiltration / Attacker IP",
         threat_detected: true,
         fm_estimate: fmEstimate,
       };
       handleIncomingPacket(pkt);
-    } else if (type === 'botnet') {
+    } else if (type === "botnet") {
       const pkt = {
         id: packetCounter + 1,
-        flow_id: '104.16.207.165-10.0.0.5-8080-8080-6',
+        flow_id: "104.16.207.165-10.0.0.5-8080-8080-6",
         timestamp: new Date().toLocaleTimeString(),
-        source_ip: '104.16.207.165',
-        destination_ip: '10.0.0.5',
-        protocol: '6',
+        source_ip: "104.16.207.165",
+        destination_ip: "10.0.0.5",
+        protocol: "6",
         destination_port: 8080,
-        label: 'Botnet',
+        label: "Botnet",
         threat_detected: true,
         fm_estimate: fmEstimate,
       };
       handleIncomingPacket(pkt);
-    } else if (type === 'benign') {
+    } else if (type === "benign") {
       const pkt = {
         id: packetCounter + 1,
-        flow_id: '192.168.10.15-8.8.8.8-5353-53-17',
+        flow_id: "192.168.10.15-8.8.8.8-5353-53-17",
         timestamp: new Date().toLocaleTimeString(),
-        source_ip: '192.168.10.15',
-        destination_ip: '8.8.8.8',
-        protocol: '17',
+        source_ip: "192.168.10.15",
+        destination_ip: "8.8.8.8",
+        protocol: "17",
         destination_port: 53,
-        label: 'BENIGN',
+        label: "BENIGN",
         threat_detected: false,
         fm_estimate: fmEstimate,
       };
@@ -309,7 +340,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors">
-      
       {/* Top Bar Navigation */}
       <Navbar
         activeTab={activeTab}
@@ -325,9 +355,8 @@ function App() {
         streamSource={streamSource}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-6 py-6">
-        
+      {/* Main Container - Scaled to max-w-[1600px] to fit perfectly on any widescreen or smaller display */}
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-3 sm:px-5 lg:px-8 py-5">
         {/* Executive High-Density Metrics Bar */}
         <MetricCards
           packetCount={packetCounter}
@@ -343,7 +372,7 @@ function App() {
         />
 
         {/* Dynamic View by Selected Module Tab */}
-        {activeTab === 'stream' && (
+        {activeTab === "stream" && (
           <LiveStreamView
             packets={packets}
             chartData={chartData}
@@ -351,6 +380,7 @@ function App() {
             isDdosActive={isDdosActive}
             streamSource={streamSource}
             isConnected={isConnected}
+            isPlaying={isPlaying}
             onClearStream={() => {
               setPackets([]);
               setChartData([]);
@@ -358,7 +388,7 @@ function App() {
           />
         )}
 
-        {activeTab === 'mapreduce' && (
+        {activeTab === "mapreduce" && (
           <HadoopMapReduceView
             baselines={bdaData.top_baselines}
             processedFeatures={bdaData.processed_features}
@@ -366,14 +396,14 @@ function App() {
           />
         )}
 
-        {activeTab === 'nosql' && (
+        {activeTab === "nosql" && (
           <NoSqlServingView
             baselines={bdaData.top_baselines}
             liveAlerts={liveAlerts}
           />
         )}
 
-        {activeTab === 'streaming-algo' && (
+        {activeTab === "streaming-algo" && (
           <StreamingAlgorithmsView
             bloomFilter={bloomFilterRef.current}
             flajoletMartin={fmEstimatorRef.current}
@@ -384,23 +414,21 @@ function App() {
           />
         )}
 
-        {activeTab === 'botnet' && (
-          <BotnetCommunityView />
-        )}
+        {activeTab === "botnet" && <BotnetCommunityView />}
 
-        {activeTab === 'r-prediction' && (
-          <PredictiveAnalyticsRView
-            rTrainingData={bdaData.r_training_data}
-          />
+        {activeTab === "r-prediction" && (
+          <PredictiveAnalyticsRView rTrainingData={bdaData.r_training_data} />
         )}
-
       </main>
 
       {/* Quiet Academic Footer (Anti-Slop Restraint: No ornamental fake tickers) */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-4 px-4 lg:px-6 text-xs text-slate-500 dark:text-slate-400 mt-auto transition-colors">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-3.5 px-3 sm:px-6 text-xs text-slate-500 dark:text-slate-400 mt-auto transition-colors">
+        <div className="max-w-[1600px] w-full mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <div>
-            <span>Real-Time Network Intrusion &amp; Distributed Attack Detection System</span>
+            <span>
+              Real-Time Network Intrusion &amp; Distributed Attack Detection
+              System
+            </span>
             <span className="mx-2 text-slate-300 dark:text-slate-700">·</span>
             <span>Big Data Analytics Architecture</span>
           </div>
@@ -419,7 +447,6 @@ function App() {
           </div>
         </div>
       </footer>
-
     </div>
   );
 }
