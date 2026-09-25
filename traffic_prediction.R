@@ -5,7 +5,7 @@ print("[*] Initializing R Analytics Engine...")
 # 1. Generate Synthetic Historical Traffic Data
 set.seed(42)
 hours <- 1:100
-time_of_day <- hours %% 24
+time_of_day <- hours %% 24 
 active_ips <- sample(50:500, 100, replace = TRUE)
 traffic_volume_mb <- (time_of_day * 15) + (active_ips * 2.5) + rnorm(100, mean=0, sd=50)
 
