@@ -285,12 +285,21 @@ export default function Sidebar({
             </button>
             <button
               onClick={() => {
+                onInjectAttack("portscan");
+                setIsOpen(false);
+              }}
+              className="px-2 py-1.5 rounded bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 text-indigo-700 dark:text-indigo-300 text-[11px] font-medium hover:bg-indigo-100 transition-colors text-center cursor-pointer"
+            >
+              PortScan Sweep
+            </button>
+            <button
+              onClick={() => {
                 onInjectAttack("benign");
                 setIsOpen(false);
               }}
-              className="px-2 py-1.5 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-[11px] font-medium hover:bg-emerald-100 transition-colors text-center cursor-pointer"
+              className="col-span-2 px-2 py-1.5 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-[11px] font-medium hover:bg-emerald-100 transition-colors text-center cursor-pointer"
             >
-              Benign Flow
+              Benign Enterprise Flow
             </button>
           </div>
         </div>
