@@ -1,9 +1,9 @@
 import React from "react";
-import { Play, Pause, Sun, Moon, ShieldAlert, Zap, Radio } from "lucide-react";
+import { Play, Pause, Sun, Moon, Zap, Menu, Compass } from "lucide-react";
 
 export default function Navbar({
   activeTab,
-  setActiveTab,
+  onOpenSidebar,
   isPlaying,
   setIsPlaying,
   speed,
@@ -14,53 +14,77 @@ export default function Navbar({
   isConnected,
   streamSource,
 }) {
-  const navTabs = [
-    { id: "stream", label: "Live Operations" },
-    { id: "mapreduce", label: "MapReduce Baselines" },
-    { id: "nosql", label: "NoSQL Serving" },
-    { id: "streaming-algo", label: "Streaming Algorithms" },
-    { id: "botnet", label: "Botnet Community Graph" },
-    { id: "r-prediction", label: "R Predictive Analytics" },
-  ];
+  const activeTabLabels = {
+    stream: "Live Operations",
+    mapreduce: "MapReduce Baselines",
+    nosql: "NoSQL Serving",
+    "streaming-algo": "Streaming Algorithms",
+    botnet: "Botnet Community Graph",
+    "r-prediction": "R Predictive Analytics",
+  };
 
   return (
     <header className="border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-6 py-2.5 transition-colors">
-      <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between gap-2 sm:gap-4">
-        {/* Zone 1: Brand Wordmark (Single text element) */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-emerald-600 dark:bg-emerald-500 flex items-center justify-center text-white shadow-xs font-bold text-sm tracking-wider">
-            BDA
-          </div>
-          <div>
-            <span className="text-sm sm:text-base font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap block">
-              Network Intrusion &amp; Attack Detection
-            </span>
-            {/* <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden md:block">
-              Hadoop · MapReduce · NoSQL · Streaming · Graph · R Analytics
-            </span> */}
-          </div>
+      <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between gap-3">
+        {/* Zone 1: Clickable Logo & Brand Name - Clicking opens the Sidebar! */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onOpenSidebar}
+            title="Click logo to open navigation sidebar"
+            className="flex items-center gap-3 group p-1 -m-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all cursor-pointer text-left"
+          >
+            {/* Unique Generated Insignia Logo */}
+            <div className="relative">
+              <img
+                src="/logo.jpg"
+                alt="BDA Cyber Defense Logo"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover ring-2 ring-emerald-500/60 shadow-md group-hover:ring-emerald-400 group-hover:scale-105 transition-all"
+              />
+              <span
+                className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${
+                  isPlaying ? "bg-emerald-500" : "bg-amber-400"
+                }`}
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm sm:text-base font-bold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  BDA Intrusion Detection
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hidden sm:inline-flex items-center gap-1">
+                  <Menu className="w-2.5 h-2.5" />
+                  <span>Menu</span>
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 block -mt-0.5">
+                Real-Time Network &amp; Attack Detection System
+              </span>
+            </div>
+          </button>
         </div>
 
-        {/* Zone 2: Navigation Links (Clean text links with active state) */}
-        <nav className="hidden lg:flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg">
-          {navTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-2.5 xl:px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === tab.id
-                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-semibold"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+        {/* Zone 2: Active Module Breadcrumb / Indicator (Replaces wide navbar tabs) */}
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-xs">
+          <Compass className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+          <span className="text-slate-500 dark:text-slate-400">
+            Current View:
+          </span>
+          <button
+            onClick={onOpenSidebar}
+            className="font-bold text-slate-900 dark:text-slate-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer flex items-center gap-1"
+            title="Click to switch module"
+          >
+            <span>{activeTabLabels[activeTab] || "Live Operations"}</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+              ▼
+            </span>
+          </button>
+        </div>
 
         {/* Zone 3: Actions & Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Stream Play/Pause Toggle - High-visibility active/paused state */}
+          {/* Stream Play/Pause Toggle */}
           <button
             onClick={() => setIsPlaying(!isPlaying)}
             title={
@@ -184,23 +208,6 @@ export default function Navbar({
             )}
           </button>
         </div>
-      </div>
-
-      {/* Responsive Secondary Nav Bar on Mobile & Tablet (< lg) */}
-      <div className="lg:hidden flex items-center gap-1 overflow-x-auto pt-2 pb-0.5 text-xs max-w-[1600px] mx-auto scrollbar-none">
-        {navTabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-2.5 py-1 rounded text-xs whitespace-nowrap font-medium transition-colors cursor-pointer ${
-              activeTab === tab.id
-                ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
       </div>
     </header>
   );

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Navbar from "./components/Navbar";
+import Sidebar from "./components/Sidebar";
 import MetricCards from "./components/MetricCards";
 import LiveStreamView from "./components/LiveStreamView";
 import HadoopMapReduceView from "./components/HadoopMapReduceView";
@@ -44,6 +45,9 @@ function App() {
 
   // Active Tab
   const [activeTab, setActiveTab] = useState("stream");
+
+  // Sidebar Open State (Opened by clicking the logo)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Stream state
   const [isPlaying, setIsPlaying] = useState(true);
@@ -200,7 +204,6 @@ function App() {
 
     const intervalTime = Math.max(20, Math.floor(100 / speed));
     const timer = setInterval(() => {
-      // Double check ref in timer tick
       if (!isPlayingRef.current) return;
       if (!bloomFilterRef.current || !fmEstimatorRef.current) return;
 
@@ -340,10 +343,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors">
-      {/* Top Bar Navigation */}
+      {/* Top Bar with Clickable Logo */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        onOpenSidebar={() => setIsSidebarOpen(true)}
         isPlaying={isPlaying}
         setIsPlaying={setIsPlaying}
         speed={speed}
@@ -353,6 +356,23 @@ function App() {
         onInjectAttack={handleInjectAttack}
         isConnected={isConnected}
         streamSource={streamSource}
+      />
+
+      {/* Slide-out Sidebar Navigation Drawer */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isPlaying={isPlaying}
+        setIsPlaying={setIsPlaying}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        onInjectAttack={handleInjectAttack}
+        isConnected={isConnected}
+        streamSource={streamSource}
+        threatCount={threatCount}
+        packetCount={packetCounter}
       />
 
       {/* Main Container - Scaled to max-w-[1600px] to fit perfectly on any widescreen or smaller display */}
