@@ -161,9 +161,9 @@ export default function NoSqlServingView({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 mb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-mono">
+              {/* <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-mono">
                 MODULE 3
-              </span>
+              </span> */}
               <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
                 NoSQL Serving Layer (MongoDB{" "}
                 <span className="font-mono">IntrusionDetection</span> DB)
