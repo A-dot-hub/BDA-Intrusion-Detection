@@ -104,7 +104,7 @@ function App() {
     fmEstimatorRef.current = fm;
   }, []);
 
-  // 2. Connect to local WebSocket if available (fallback to internal engine)
+  // 2. Connect to local WebSocket if available (fallback to internal engine) or not
   useEffect(() => {
     let ws = null;
     let didConnect = false;
