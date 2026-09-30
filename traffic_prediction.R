@@ -2,7 +2,7 @@
 
 print("[*] Initializing R Analytics Engine...")
 
-# 1. Generate Synthetic Historical Traffic Data
+# 1. Generate Synthetic Historical Traffic Datas
 set.seed(42)
 hours <- 1:100
 time_of_day <- hours %% 24 
