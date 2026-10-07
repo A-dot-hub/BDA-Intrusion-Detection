@@ -4,7 +4,7 @@ import os
 # 1. Connect to MongoDB (Update the URI if you are using MongoDB Atlas)
 client = pymongo.MongoClient("mongodb://localhost:27017/")
 
-# 2. Create the Database
+# 2. Create the Databases
 db = client["IntrusionDetection"]
 
 # 3. Create the Collections
