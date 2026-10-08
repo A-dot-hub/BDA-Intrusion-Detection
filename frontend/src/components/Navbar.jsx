@@ -50,15 +50,14 @@ export default function Navbar({
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-sm sm:text-base font-bold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  BDA Intrusion Detection
-                </span>
+                     IntrusionX                </span>
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hidden sm:inline-flex items-center gap-1">
                   <Menu className="w-2.5 h-2.5" />
                   <span>Menu</span>
                 </span>
               </div>
               <span className="text-[11px] text-slate-500 dark:text-slate-400 block -mt-0.5">
-                Real-Time Network &amp; Attack Detection System
+                Real-Time Intrusion &amp; Attack Detection System
               </span>
             </div>
           </button>
