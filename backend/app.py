@@ -19,8 +19,12 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
+
 from streaming.bloom_filter import BloomFilter
 from streaming.flajolet_martin import FlajoletMartin
+from hive.run_hive import PRESET_QUERIES, execute_hiveql, export_baselines_to_csv_and_mongo
 
 app = FastAPI(
     title="Real-Time Intrusion and Distributed Attack Detection System",
@@ -254,6 +258,57 @@ async def get_network_graph():
         "c2_server": "104.16.207.165",
         "communities_count": 3
     }
+
+
+# --------------------------------------------------
+# HIVEQL BATCH ANALYTICS ENDPOINTS
+# --------------------------------------------------
+class HiveExecuteRequest(BaseModel):
+    query: Optional[str] = None
+    query_id: Optional[str] = None
+
+
+@app.get("/api/hive/queries")
+async def get_hive_queries():
+    """Returns available analytical HiveQL presets with execution plan descriptions."""
+    return list(PRESET_QUERIES.values())
+
+
+@app.post("/api/hive/execute")
+async def run_hive_query(req: HiveExecuteRequest):
+    """Executes a HiveQL query (preset or custom) and returns columns, rows, and runtime metrics."""
+    sql = req.query
+    mr_plan = "Custom HiveQL -> MapReduce / Tez DAG"
+    name = "Custom HiveQL Query"
+
+    if req.query_id and req.query_id in PRESET_QUERIES:
+        sql = PRESET_QUERIES[req.query_id]["sql"]
+        mr_plan = PRESET_QUERIES[req.query_id]["mr_stages"]
+        name = PRESET_QUERIES[req.query_id]["name"]
+
+    if not sql:
+        return {"error": "Query or valid query_id required"}
+
+    try:
+        res = execute_hiveql(sql)
+        res["query_name"] = name
+        res["mr_plan"] = mr_plan
+        return res
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/hive/export-baselines")
+async def export_hive_baselines():
+    """Runs HiveQL Query 1 to extract baselines and synchronizes with MongoDB NoSQL."""
+    try:
+        export_baselines_to_csv_and_mongo(sync_mongo=True)
+        return {
+            "status": "success",
+            "message": "HiveQL baselines exported and synchronized into MongoDB Blacklist collection."
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 
 # --------------------------------------------------

@@ -144,8 +144,7 @@ def create_consumer(retries=5, delay=2):
                 value_deserializer=lambda value: json.loads(value.decode("utf-8")),
                 auto_offset_reset="earliest",
                 enable_auto_commit=True,
-                group_id="intrusion-detection-group",
-                consumer_timeout_ms=None
+                group_id="intrusion-detection-group"
             )
             return cons
         except KafkaError as ke:
